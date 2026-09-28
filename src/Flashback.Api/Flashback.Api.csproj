@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Flashback.Database\Flashback.Database.csproj" />
   </ItemGroup>
 
 </Project>

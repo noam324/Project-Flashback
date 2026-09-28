@@ -1,4 +1,4 @@
-using Flashback.Api.Data;
+using Flashback.Database.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
