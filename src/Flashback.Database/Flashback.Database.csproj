@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Flashback.Shared\Flashback.Shared.csproj" />
+    <ProjectReference Include="..\Flashback.Core\Flashback.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
