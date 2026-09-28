@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Flashback.Api/Flashback.Api.csproj" />
+    <Project Path="src/Flashback.Core/Flashback.Core.csproj" />
+    <Project Path="src/Flashback.Shared/Flashback.Shared.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,6 @@
+@Flashback.Api_HostAddress = http://localhost:5056
+
+GET {{Flashback.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
