@@ -1,4 +1,13 @@
+using Flashback.Api.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Database connection string is missing.");
+
+builder.Services.AddDbContext<FlashbackDbContext>(options =>
+    options.UseSqlite(connectionString));
 
 var app = builder.Build();
 

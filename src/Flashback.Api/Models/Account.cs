@@ -1,4 +1,4 @@
-namespace Flashback.Core.Models;
+namespace Flashback.Api.Models;
 
 public class Account
 {

@@ -1,7 +1,7 @@
-using Flashback.Core.Models;
+using Flashback.Api.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Flashback.Core.Data;
+namespace Flashback.Api.Data;
 
 public class FlashbackDbContext : DbContext
 {
