@@ -14,6 +14,8 @@ public class FlashbackDbContext : DbContext
 
     public DbSet<PlayerProfile> PlayerProfiles => Set<PlayerProfile>();
 
+    public DbSet<LoginSession> LoginSessions => Set<LoginSession>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Account>(entity =>
@@ -32,6 +34,9 @@ public class FlashbackDbContext : DbContext
                 .IsUnique();
 
             entity.HasIndex(x => x.Email)
+                .IsUnique();
+
+            entity.HasIndex(x => x.DiscordUserId)
                 .IsUnique();
 
             entity.HasOne(x => x.Profile)
@@ -53,6 +58,23 @@ public class FlashbackDbContext : DbContext
 
             entity.Property(x => x.Level)
                 .HasDefaultValue(1);
+        });
+
+        modelBuilder.Entity<LoginSession>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.TokenHash)
+                .HasMaxLength(64)
+                .IsRequired();
+
+            entity.HasIndex(x => x.TokenHash)
+                .IsUnique();
+
+            entity.HasOne(x => x.Account)
+                .WithMany()
+                .HasForeignKey(x => x.AccountId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -1,9 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>eab13659-5aa5-48c4-9fd0-e48cd336f085</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Flashback.Database\Flashback.Database.csproj" />
+    <ProjectReference Include="..\Flashback.Migrations\Flashback.Migrations.csproj" />
   </ItemGroup>
 
 </Project>

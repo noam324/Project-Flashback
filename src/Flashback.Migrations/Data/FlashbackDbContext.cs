@@ -5,16 +5,22 @@ namespace Flashback.Migrations.Data;
 
 public class FlashbackDbContext : DbContext
 {
-    public FlashbackDbContext(DbContextOptions<FlashbackDbContext> options)
+    public FlashbackDbContext(
+        DbContextOptions<FlashbackDbContext> options)
         : base(options)
     {
     }
 
     public DbSet<Account> Accounts => Set<Account>();
 
-    public DbSet<PlayerProfile> PlayerProfiles => Set<PlayerProfile>();
+    public DbSet<PlayerProfile> PlayerProfiles =>
+        Set<PlayerProfile>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public DbSet<LoginSession> LoginSessions =>
+        Set<LoginSession>();
+
+    protected override void OnModelCreating(
+        ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Account>(entity =>
         {
@@ -28,15 +34,30 @@ public class FlashbackDbContext : DbContext
                 .HasMaxLength(320)
                 .IsRequired();
 
+            entity.Property(x => x.DiscordUserId)
+                .HasMaxLength(64)
+                .IsRequired();
+
+            entity.Property(x => x.DiscordUsername)
+                .HasMaxLength(64)
+                .IsRequired();
+
+            entity.Property(x => x.DiscordAvatarUrl)
+                .HasMaxLength(512);
+
             entity.HasIndex(x => x.Username)
                 .IsUnique();
 
             entity.HasIndex(x => x.Email)
                 .IsUnique();
 
+            entity.HasIndex(x => x.DiscordUserId)
+                .IsUnique();
+
             entity.HasOne(x => x.Profile)
                 .WithOne(x => x.Account)
-                .HasForeignKey<PlayerProfile>(x => x.AccountId)
+                .HasForeignKey<PlayerProfile>(
+                    x => x.AccountId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -53,6 +74,23 @@ public class FlashbackDbContext : DbContext
 
             entity.Property(x => x.Level)
                 .HasDefaultValue(1);
+        });
+
+        modelBuilder.Entity<LoginSession>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.TokenHash)
+                .HasMaxLength(64)
+                .IsRequired();
+
+            entity.HasIndex(x => x.TokenHash)
+                .IsUnique();
+
+            entity.HasOne(x => x.Account)
+                .WithMany()
+                .HasForeignKey(x => x.AccountId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

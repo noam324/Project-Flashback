@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Flashback.Migrations.Migrations
 {
     [DbContext(typeof(FlashbackDbContext))]
-    [Migration("20260928133850_InitialCreate")]
+    [Migration("20260929045523_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -29,6 +29,20 @@ namespace Flashback.Migrations.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DiscordAvatarUrl")
+                        .HasMaxLength(512)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DiscordUserId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DiscordUsername")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(320)
@@ -41,6 +55,9 @@ namespace Flashback.Migrations.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DiscordUserId")
+                        .IsUnique();
+
                     b.HasIndex("Email")
                         .IsUnique();
 
@@ -48,6 +65,36 @@ namespace Flashback.Migrations.Migrations
                         .IsUnique();
 
                     b.ToTable("Accounts");
+                });
+
+            modelBuilder.Entity("Flashback.Migrations.Models.LoginSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.ToTable("LoginSessions");
                 });
 
             modelBuilder.Entity("Flashback.Migrations.Models.PlayerProfile", b =>
@@ -83,6 +130,17 @@ namespace Flashback.Migrations.Migrations
                         .IsUnique();
 
                     b.ToTable("PlayerProfiles");
+                });
+
+            modelBuilder.Entity("Flashback.Migrations.Models.LoginSession", b =>
+                {
+                    b.HasOne("Flashback.Migrations.Models.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
                 });
 
             modelBuilder.Entity("Flashback.Migrations.Models.PlayerProfile", b =>

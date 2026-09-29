@@ -4,14 +4,42 @@ using Microsoft.EntityFrameworkCore.Design;
 
 namespace Flashback.Migrations;
 
-public class FlashbackDbContextFactory : IDesignTimeDbContextFactory<FlashbackDbContext>
+public class FlashbackDbContextFactory
+    : IDesignTimeDbContextFactory<FlashbackDbContext>
 {
     public FlashbackDbContext CreateDbContext(string[] args)
     {
-        var optionsBuilder = new DbContextOptionsBuilder<FlashbackDbContext>();
+        var directory = new DirectoryInfo(
+            Directory.GetCurrentDirectory());
 
-        optionsBuilder.UseSqlite("Data Source=flashback.db");
+        while (directory is not null &&
+               !File.Exists(
+                   Path.Combine(
+                       directory.FullName,
+                       "ProjectFlashback.slnx")))
+        {
+            directory = directory.Parent;
+        }
 
-        return new FlashbackDbContext(optionsBuilder.Options);
+        if (directory is null)
+        {
+            throw new InvalidOperationException(
+                "Could not find ProjectFlashback.slnx.");
+        }
+
+        var databasePath = Path.Combine(
+            directory.FullName,
+            "src",
+            "Flashback.Migrations",
+            "flashback.db");
+
+        var optionsBuilder =
+            new DbContextOptionsBuilder<FlashbackDbContext>();
+
+        optionsBuilder.UseSqlite(
+            $"Data Source={databasePath}");
+
+        return new FlashbackDbContext(
+            optionsBuilder.Options);
     }
 }

@@ -18,11 +18,35 @@ namespace Flashback.Migrations.Migrations
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
                     Username = table.Column<string>(type: "TEXT", maxLength: 32, nullable: false),
                     Email = table.Column<string>(type: "TEXT", maxLength: 320, nullable: false),
+                    DiscordUserId = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false),
+                    DiscordUsername = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false),
+                    DiscordAvatarUrl = table.Column<string>(type: "TEXT", maxLength: 512, nullable: true),
                     CreatedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Accounts", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LoginSessions",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "TEXT", nullable: false),
+                    AccountId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    TokenHash = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false),
+                    CreatedAtUtc = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ExpiresAtUtc = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LoginSessions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LoginSessions_Accounts_AccountId",
+                        column: x => x.AccountId,
+                        principalTable: "Accounts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -48,6 +72,12 @@ namespace Flashback.Migrations.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Accounts_DiscordUserId",
+                table: "Accounts",
+                column: "DiscordUserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Accounts_Email",
                 table: "Accounts",
                 column: "Email",
@@ -60,6 +90,17 @@ namespace Flashback.Migrations.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_LoginSessions_AccountId",
+                table: "LoginSessions",
+                column: "AccountId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LoginSessions_TokenHash",
+                table: "LoginSessions",
+                column: "TokenHash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PlayerProfiles_AccountId",
                 table: "PlayerProfiles",
                 column: "AccountId",
@@ -69,6 +110,9 @@ namespace Flashback.Migrations.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "LoginSessions");
+
             migrationBuilder.DropTable(
                 name: "PlayerProfiles");
 

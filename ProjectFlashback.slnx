@@ -4,4 +4,6 @@
     <Project Path="src/Flashback.Core/Flashback.Core.csproj" />
     <Project Path="src/Flashback.Shared/Flashback.Shared.csproj" />
   </Folder>
+  <Project Path="Flashback.DownloadServer/Flashback.DownloadServer.csproj" />
+  <Project Path="Flashback.Launcher/Flashback.Launcher.csproj" />
 </Solution>

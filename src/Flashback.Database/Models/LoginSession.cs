@@ -1,0 +1,16 @@
+namespace Flashback.Database.Models;
+
+public class LoginSession
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    public Guid AccountId { get; set; }
+
+    public string TokenHash { get; set; } = string.Empty;
+
+    public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+
+    public DateTime ExpiresAtUtc { get; set; }
+
+    public Account? Account { get; set; }
+}
