@@ -1,8 +1,12 @@
-import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import {
+  useEffect,
+  useState,
+} from "react";
 
 import type { Account } from "../../types/account";
 import type { Page } from "../../types/navigation";
+
+import { useLauncherStore } from "../../store/launcherStore";
 
 type Props = {
   account: Account | null;
@@ -13,23 +17,70 @@ type BuildInfo = {
   installed: boolean;
   build: string;
   changelist: string;
+  versionCompatible?: boolean;
+  detectedVersion?: string;
+  rootPath?: string | null;
   executablePath: string | null;
+  validationMessage?: string;
 };
 
-async function detectBuild(): Promise<BuildInfo | null> {
-  try {
-    return await invoke<BuildInfo>("detect_local_build");
-  } catch {
-    return null;
-  }
+type NewsItem = {
+  tag: string;
+  title: string;
+  description: string;
+  mark: string;
+};
+
+function isTauriRuntime(): boolean {
+  const tauri = (
+    window as Window & {
+      __TAURI_INTERNALS__?: unknown;
+    }
+  ).__TAURI_INTERNALS__;
+
+  return Boolean(tauri);
 }
 
-async function launchBuild(): Promise<boolean> {
+async function tauriInvoke<T>(
+  command: string,
+  args?: Record<string, unknown>
+): Promise<T> {
+  if (!isTauriRuntime()) {
+    throw new Error(
+      "Project Flashback desktop launcher is required for this action."
+    );
+  }
+
+  const module = await import(
+    "@tauri-apps/api/core"
+  );
+
+  if (
+    !module ||
+    typeof module.invoke !== "function"
+  ) {
+    throw new Error(
+      "Tauri invoke is unavailable."
+    );
+  }
+
+  return module.invoke<T>(
+    command,
+    args
+  );
+}
+
+async function detectBuild(): Promise<BuildInfo | null> {
+  if (!isTauriRuntime()) {
+    return null;
+  }
+
   try {
-    await invoke<number>("launch_local_build");
-    return true;
+    return await tauriInvoke<BuildInfo>(
+      "detect_local_build"
+    );
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -43,409 +94,552 @@ export default function HomePage({
   const [launching, setLaunching] =
     useState(false);
 
-  const level =
-    account?.profile?.level ?? 1;
+  const [launchError, setLaunchError] =
+    useState("");
 
-  const credits =
-    account?.profile?.flashbackCredits ?? 0;
+  const [launchInfo, setLaunchInfo] =
+    useState("");
+
+  const selectedBuild =
+    useLauncherStore(
+      (state) => state.selectedBuild
+    );
+
+  const setSelectedBuild =
+    useLauncherStore(
+      (state) => state.setSelectedBuild
+    );
 
   const displayName =
     account?.profile?.displayName ??
     account?.discordUsername ??
     account?.username ??
-    "Guest";
+    "Player";
+
+  const level =
+    account?.profile?.level ?? 1;
 
   useEffect(() => {
     let mounted = true;
 
     void detectBuild().then((result) => {
-      if (mounted) {
-        setBuild(result);
+      if (!mounted) {
+        return;
+      }
+
+      setBuild(result);
+
+      if (
+        result?.installed &&
+        result.executablePath &&
+        !selectedBuild
+      ) {
+        setSelectedBuild({
+          build: result.build,
+          changelist:
+            result.changelist,
+          executablePath:
+            result.executablePath,
+        });
       }
     });
 
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [
+    selectedBuild,
+    setSelectedBuild,
+  ]);
 
   async function handlePlay() {
-    if (!build?.installed) {
+    setLaunchError("");
+    setLaunchInfo("");
+
+    if (!isTauriRuntime()) {
+      setLaunchInfo(
+        "Open Project Flashback as the desktop launcher to start the selected Build."
+      );
+
       onNavigate("library");
       return;
     }
 
     setLaunching(true);
 
-    const started =
-      await launchBuild();
+    try {
+      let executablePath =
+        selectedBuild?.executablePath ??
+        build?.executablePath ??
+        null;
 
-    setLaunching(false);
+      if (!executablePath) {
+        const detected =
+          await detectBuild();
 
-    if (!started) {
-      onNavigate("library");
+        if (
+          detected?.installed &&
+          detected.executablePath
+        ) {
+          executablePath =
+            detected.executablePath;
+
+          setBuild(detected);
+
+          setSelectedBuild({
+            build:
+              detected.build,
+            changelist:
+              detected.changelist,
+            executablePath:
+              detected.executablePath,
+          });
+        }
+      }
+
+      if (!executablePath) {
+        setLaunchInfo(
+          "No Build is selected. Choose your Build first."
+        );
+
+        onNavigate("library");
+        return;
+      }
+
+      await tauriInvoke<number>(
+        "launch_local_build",
+        {
+          executablePath,
+        }
+      );
+    } catch (error) {
+      setLaunchError(
+        error instanceof Error
+          ? error.message
+          : "Failed to launch the selected Build."
+      );
+    } finally {
+      setLaunching(false);
     }
   }
 
+  const ready =
+    Boolean(
+      selectedBuild?.executablePath ??
+      build?.executablePath
+    );
+
+  const news: NewsItem[] = [
+    {
+      tag: "UPDATE",
+      title:
+        "Project Flashback launcher rebuild",
+      description:
+        "The launcher is being rebuilt as a complete desktop experience.",
+      mark: "PF",
+    },
+    {
+      tag: "BUILD",
+      title:
+        "Classic 12.50 support",
+      description:
+        "Build 12.50 with CL 13137020 is the current classic target.",
+      mark: "12.50",
+    },
+    {
+      tag: "ACCOUNT",
+      title:
+        "Discord authentication",
+      description:
+        "Your launcher account stays connected to Discord.",
+      mark: "DC",
+    },
+  ];
+
   return (
     <main className="home-page">
+      <div className="home-content">
 
-      {/* HERO */}
+        <section className="welcome-row">
+          <div>
+            <span className="page-kicker">
+              DASHBOARD
+            </span>
 
-      <section className="home-hero">
-
-        <div className="hero-grid" />
-
-        <div className="hero-orb hero-orb-one" />
-        <div className="hero-orb hero-orb-two" />
-
-        <div className="hero-copy">
-
-          <span className="hero-kicker">
-            PROJECT FLASHBACK / CLASSIC ERA
-          </span>
-
-          <h2>
-            DROP BACK IN.
-            <br />
-            <span>PLAY CLASSIC.</span>
-          </h2>
-
-          <p>
-            A dedicated desktop launcher for
-            your classic library, account,
-            progression and game builds.
-          </p>
-
-          <div className="hero-actions">
-
-            <button
-              className="button primary hero-play"
-              onClick={() =>
-                void handlePlay()
-              }
-              disabled={launching}
-            >
+            <h1>
+              Welcome back,{" "}
               <span>
+                {displayName}
+              </span>
+            </h1>
+
+            <p>
+              Your classic launcher is ready.
+              Select a Build and drop in.
+            </p>
+          </div>
+
+          <div className="welcome-level-card">
+            <span>
+              LEVEL
+            </span>
+
+            <strong>
+              {level}
+            </strong>
+          </div>
+        </section>
+
+        {launchInfo && (
+          <div className="launch-info">
+            <strong>
+              DESKTOP LAUNCHER
+            </strong>
+
+            <span>
+              {launchInfo}
+            </span>
+          </div>
+        )}
+
+        {launchError && (
+          <div className="launch-error">
+            <strong>
+              LAUNCH ERROR
+            </strong>
+
+            <span>
+              {launchError}
+            </span>
+          </div>
+        )}
+
+        <section className="launch-panel">
+          <div className="launch-background-grid" />
+
+          <div className="launch-copy">
+            <span className="section-kicker">
+              CURRENT BUILD
+            </span>
+
+            <h2>
+              Fortnite 12.50
+            </h2>
+
+            <p>
+              <span>
+                Chapter 2 / Season 2
+              </span>
+
+              <span>
+                •
+              </span>
+
+              <span>
+                Changelist 13137020
+              </span>
+            </p>
+
+            <div className="launch-status">
+              <span
+                className={
+                  ready
+                    ? "launch-status-dot ready"
+                    : "launch-status-dot"
+                }
+              />
+
+              <span>
+                {ready
+                  ? "BUILD READY"
+                  : "BUILD NOT INSTALLED"}
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="launch-button"
+            onClick={() =>
+              void handlePlay()
+            }
+            disabled={launching}
+          >
+            <span className="launch-button-icon">
+              ▶
+            </span>
+
+            <span className="launch-button-copy">
+              <strong>
                 {launching
                   ? "LAUNCHING..."
-                  : build?.installed
-                    ? "PLAY NOW"
-                    : "OPEN LIBRARY"}
+                  : "PLAY NOW"}
+              </strong>
+
+              <small>
+                {ready
+                  ? "START CLASSIC BUILD"
+                  : "OPEN BUILD SELECTOR"}
+              </small>
+            </span>
+
+            <span className="launch-button-arrow">
+              →
+            </span>
+          </button>
+        </section>
+
+        <section className="stats-section">
+          <div className="section-heading">
+            <div>
+              <span className="section-kicker">
+                PLAYER OVERVIEW
               </span>
 
-              <span className="button-arrow">
-                →
-              </span>
-            </button>
+              <h2>
+                Your Profile
+              </h2>
+            </div>
+          </div>
+
+          <div className="stats-grid">
+            <StatCard
+              icon="◎"
+              title="LEVEL"
+              value={String(level)}
+              subtitle="CURRENT LEVEL"
+            />
+
+            <StatCard
+              icon="★"
+              title="WINS"
+              value="0"
+              subtitle="SEASON WINS"
+            />
+
+            <StatCard
+              icon="✦"
+              title="ELIMINATIONS"
+              value="0"
+              subtitle="TOTAL ELIMS"
+            />
+
+            <StatCard
+              icon="◈"
+              title="BUILD"
+              value="12.50"
+              subtitle="CL 13137020"
+            />
+          </div>
+        </section>
+
+        <section className="dashboard-lower">
+
+          <div className="dashboard-profile-card">
+            <div className="profile-card-header">
+              <div>
+                <span className="section-kicker">
+                  ACCOUNT
+                </span>
+
+                <h2>
+                  Player Profile
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                className="subtle-button"
+                onClick={() =>
+                  onNavigate("settings")
+                }
+              >
+                SETTINGS →
+              </button>
+            </div>
+
+            <div className="profile-main">
+              <div className="profile-avatar-large">
+                {account?.discordAvatarUrl ? (
+                  <img
+                    src={
+                      account.discordAvatarUrl
+                    }
+                    alt=""
+                  />
+                ) : (
+                  displayName
+                    .slice(0, 1)
+                    .toUpperCase()
+                )}
+              </div>
+
+              <div className="profile-main-copy">
+                <strong>
+                  {displayName}
+                </strong>
+
+                <span>
+                  DISCORD CONNECTED
+                </span>
+
+                <small>
+                  LEVEL {level}
+                </small>
+              </div>
+
+              <div className="profile-side-stat">
+                <span>
+                  WINS
+                </span>
+
+                <strong>
+                  0
+                </strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="dashboard-build-card">
+            <div className="profile-card-header">
+              <div>
+                <span className="section-kicker">
+                  ACTIVE TARGET
+                </span>
+
+                <h2>
+                  Classic Build
+                </h2>
+              </div>
+            </div>
+
+            <div className="build-summary">
+              <div className="build-summary-version">
+                12.50
+              </div>
+
+              <div className="build-summary-copy">
+                <strong>
+                  Fortnite 12.50
+                </strong>
+
+                <span>
+                  CL 13137020
+                </span>
+
+                <small>
+                  {ready
+                    ? "READY TO LAUNCH"
+                    : "NO BUILD SELECTED"}
+                </small>
+              </div>
+            </div>
 
             <button
-              className="button secondary"
+              type="button"
+              className="subtle-button wide"
               onClick={() =>
                 onNavigate("library")
               }
             >
-              LIBRARY
+              MANAGE BUILD →
             </button>
-
           </div>
 
-          <div className="hero-meta">
+        </section>
 
-            <span className="meta-status">
-
-              <span className="status-dot" />
-
-              {build?.installed
-                ? "BUILD READY"
-                : "BUILD NOT INSTALLED"}
-
-            </span>
-
-            <span>
-              12.50
-            </span>
-
-            <span>
-              CL 13137020
-            </span>
-
-          </div>
-
-        </div>
-
-        {/* HERO ART */}
-
-        <div
-          className="hero-build-art"
-          aria-hidden="true"
-        >
-
-          <div className="hero-slice slice-one" />
-
-          <div className="hero-slice slice-two" />
-
-          <div className="hero-slice slice-three" />
-
-          <div className="hero-badge-large">
-            12.50
-          </div>
-
-          <div className="hero-badge-small">
-            CHAPTER 2 · SEASON 2
-          </div>
-
-        </div>
-
-      </section>
-
-      {/* DASHBOARD */}
-
-      <section className="dashboard-grid">
-
-        <div className="dashboard-main">
-
-          <div className="section-head">
-
+        <section className="news-section">
+          <div className="section-heading">
             <div>
-
               <span className="section-kicker">
-                WELCOME BACK
+                UPDATES
               </span>
 
-              <h3>
-                {displayName}
-              </h3>
-
+              <h2>
+                Latest News
+              </h2>
             </div>
 
             <button
-              className="text-button"
-              onClick={() =>
-                onNavigate("settings")
-              }
-            >
-              ACCOUNT →
-            </button>
-
-          </div>
-
-          {/* STATS */}
-
-          <div className="profile-stats">
-
-            <StatCard
-              label="LEVEL"
-              value={String(level)}
-              hint="CURRENT LEVEL"
-              icon="01"
-            />
-
-            <StatCard
-              label="CREDITS"
-              value={credits.toLocaleString()}
-              hint="FLASHBACK CREDITS"
-              icon="V"
-            />
-
-            <StatCard
-              label="WINS"
-              value="0"
-              hint="SEASON WINS"
-              icon="★"
-            />
-
-            <StatCard
-              label="KILLS"
-              value="0"
-              hint="TOTAL ELIMS"
-              icon="✦"
-            />
-
-          </div>
-
-          {/* BUILD CARD */}
-
-          <article className="feature-card">
-
-            <div className="feature-copy">
-
-              <span className="section-kicker">
-                CURRENT BUILD
-              </span>
-
-              <h3>
-                Fortnite 12.50
-              </h3>
-
-              <p>
-                Your current classic target is
-                changelist 13137020. Manage the
-                installation from Library.
-              </p>
-
-              <button
-                className="button compact"
-                onClick={() =>
-                  onNavigate("library")
-                }
-              >
-                MANAGE BUILD
-              </button>
-
-            </div>
-
-            <div className="feature-build">
-
-              <span>
-                BUILD
-              </span>
-
-              <strong>
-                12.50
-              </strong>
-
-              <small>
-                CL 13137020
-              </small>
-
-              <small>
-                {build?.installed
-                  ? "READY TO LAUNCH"
-                  : "AVAILABLE TO INSTALL"}
-              </small>
-
-            </div>
-
-          </article>
-
-        </div>
-
-        {/* NEWS */}
-
-        <aside className="dashboard-side">
-
-          <div className="section-head">
-
-            <div>
-
-              <span className="section-kicker">
-                LATEST
-              </span>
-
-              <h3>
-                News
-              </h3>
-
-            </div>
-
-            <button
-              className="text-button"
+              type="button"
+              className="subtle-button"
               onClick={() =>
                 onNavigate("news")
               }
             >
-              ALL →
+              VIEW ALL →
             </button>
-
           </div>
 
-          <NewsRow
-            badge="01"
-            title="Launcher rebuild"
-            text="Project Flashback is becoming a complete desktop launcher."
-          />
+          <div className="news-list">
+            {news.map((item) => (
+              <article
+                className="news-card"
+                key={item.title}
+              >
+                <div className="news-thumbnail">
+                  <span>
+                    {item.mark}
+                  </span>
+                </div>
 
-          <NewsRow
-            badge="12.50"
-            title="Classic build"
-            text="The 12.50 build is now the primary launcher target."
-          />
+                <div className="news-content">
+                  <span className="news-tag">
+                    {item.tag}
+                  </span>
 
-          <NewsRow
-            badge="DC"
-            title="Discord accounts"
-            text="Sign in to keep your account and progression synced."
-          />
+                  <h3>
+                    {item.title}
+                  </h3>
 
-        </aside>
+                  <p>
+                    {item.description}
+                  </p>
+                </div>
 
-      </section>
+                <span className="news-arrow">
+                  →
+                </span>
+              </article>
+            ))}
+          </div>
+        </section>
 
+      </div>
     </main>
   );
 }
 
 function StatCard({
-  label,
-  value,
-  hint,
   icon,
+  title,
+  value,
+  subtitle,
 }: {
-  label: string;
-  value: string;
-  hint: string;
   icon: string;
+  title: string;
+  value: string;
+  subtitle: string;
 }) {
   return (
     <article className="stat-card">
-
-      <div className="stat-card-top">
-
-        <span>
-          {label}
+      <div className="stat-card-header">
+        <span className="stat-card-title">
+          {title}
         </span>
 
         <span className="stat-card-icon">
           {icon}
         </span>
-
       </div>
 
-      <strong>
+      <strong className="stat-card-value">
         {value}
       </strong>
 
-      <small>
-        {hint}
-      </small>
-
-    </article>
-  );
-}
-
-function NewsRow({
-  badge,
-  title,
-  text,
-}: {
-  badge: string;
-  title: string;
-  text: string;
-}) {
-  return (
-    <article className="news-row">
-
-      <div className="news-badge">
-        {badge}
-      </div>
-
-      <div>
-
-        <span>
-          FLASHBACK
-        </span>
-
-        <h4>
-          {title}
-        </h4>
-
-        <p>
-          {text}
-        </p>
-
-      </div>
-
+      <span className="stat-card-subtitle">
+        {subtitle}
+      </span>
     </article>
   );
 }

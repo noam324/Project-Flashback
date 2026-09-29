@@ -7,40 +7,49 @@ type Props = {
 export default function TopBar({
   account,
 }: Props) {
-  const credits =
-    account?.profile
-      ?.flashbackCredits ?? 0;
+  const displayName =
+    account?.profile?.displayName ??
+    account?.discordUsername ??
+    account?.username ??
+    "GUEST";
 
   return (
     <header className="topbar">
       <div className="topbar-left">
-        <span className="status-dot" />
+        <div className="topbar-online">
+          <span className="topbar-online-dot" />
+          ONLINE
+        </div>
 
-        <span>
-          FLASHBACK ONLINE
-        </span>
+        <div className="topbar-build">
+          BUILD 12.50
+        </div>
       </div>
 
       <div className="topbar-right">
-        <div className="wallet">
-          <span className="wallet-icon">
-            V
-          </span>
+        <div className="topbar-account">
+          <div className="topbar-account-copy">
+            <span>
+              ACCOUNT
+            </span>
 
-          <span>
-            {credits}
-          </span>
-        </div>
+            <strong>
+              {displayName}
+            </strong>
+          </div>
 
-        <div className="profile-mini">
-          {account
-            ? (
-                account.profile
-                  ?.displayName ??
-                account.discordUsername ??
-                account.username
-              )
-            : "GUEST"}
+          <div className="topbar-avatar">
+            {account?.discordAvatarUrl ? (
+              <img
+                src={account.discordAvatarUrl}
+                alt=""
+              />
+            ) : (
+              displayName
+                .slice(0, 1)
+                .toUpperCase()
+            )}
+          </div>
         </div>
       </div>
     </header>

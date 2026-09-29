@@ -15,13 +15,92 @@ import type { Page } from "./types/navigation";
 
 import "./index.css";
 
+function DiscordLoginScreen({
+  loading,
+  status,
+  onLogin,
+}: {
+  loading: boolean;
+  status: string;
+  onLogin: () => void;
+}) {
+  return (
+    <div className="auth-screen">
+      <div className="auth-glow" />
+
+      <div className="auth-card">
+        <div className="auth-mark">
+          PF
+        </div>
+
+        <span className="auth-kicker">
+          PROJECT FLASHBACK
+        </span>
+
+        <h1>
+          CONNECT YOUR
+          <br />
+          <span>DISCORD ACCOUNT</span>
+        </h1>
+
+        <p>
+          Sign in before entering the launcher.
+          Your Flashback account and progression
+          stay connected to your Discord identity.
+        </p>
+
+        <button
+          type="button"
+          className="button discord-button"
+          onClick={onLogin}
+          disabled={loading}
+        >
+          <span>
+            {loading
+              ? "OPENING DISCORD..."
+              : "CONTINUE WITH DISCORD"}
+          </span>
+
+          <span>
+            →
+          </span>
+        </button>
+
+        {status && (
+          <div className="auth-status">
+            {status}
+          </div>
+        )}
+
+        <div className="auth-footer">
+          <span>
+            SECURE ACCOUNT GATE
+          </span>
+
+          <span>
+            PROJECT FLASHBACK
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [page, setPage] =
     useState<Page>("home");
 
+  const [hydrated, setHydrated] =
+    useState(false);
+
   const account =
     useAccountStore(
       (state) => state.account
+    );
+
+  const loading =
+    useAccountStore(
+      (state) => state.loading
     );
 
   const loginStatus =
@@ -45,79 +124,90 @@ export default function App() {
     );
 
   useEffect(() => {
-    void hydrate();
+    let mounted = true;
+
+    void hydrate().finally(() => {
+      if (mounted) {
+        setHydrated(true);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
   }, [hydrate]);
 
   return (
     <AppFrame>
-      <Sidebar
-        page={page}
-        account={account}
-        loginStatus={loginStatus}
-        onNavigate={setPage}
-        onLogin={() =>
-          void loginWithDiscord()
-        }
-        onLogout={() =>
-          void logout()
-        }
-      />
+      {!hydrated ? (
+        <div className="auth-loading">
+          <div className="auth-loading-mark">
+            PF
+          </div>
 
-      <section className="workspace">
-        <TopBar
-          account={account}
+          <span>
+            LOADING PROJECT FLASHBACK
+          </span>
+        </div>
+      ) : !account ? (
+        <DiscordLoginScreen
+          loading={loading}
+          status={loginStatus}
+          onLogin={() =>
+            void loginWithDiscord()
+          }
         />
-
-        {page === "home" && (
-          <HomePage
+      ) : (
+        <>
+          <Sidebar
+            page={page}
             account={account}
+            loginStatus={loginStatus}
             onNavigate={setPage}
+            onLogin={() =>
+              void loginWithDiscord()
+            }
+            onLogout={() =>
+              void logout()
+            }
           />
-        )}
 
-        {page === "library" && (
-          <LibraryPage />
-        )}
+          <section className="workspace">
+            <TopBar
+              account={account}
+            />
 
-        {page === "news" && (
-          <NewsPage />
-        )}
+            {page === "home" && (
+              <HomePage
+                account={account}
+                onNavigate={setPage}
+              />
+            )}
 
-        {page === "locker" && (
-          <PlaceholderPage
-            title="Locker"
-            description="Manage your equipped and owned cosmetics."
-          />
-        )}
+            {page === "library" && (
+              <LibraryPage />
+            )}
 
-        {page === "item-shop" && (
-          <PlaceholderPage
-            title="Item Shop"
-            description="Browse the current item shop."
-          />
-        )}
+            {page === "news" && (
+              <NewsPage />
+            )}
 
-        {page === "tournaments" && (
-          <PlaceholderPage
-            title="Tournaments"
-            description="Project Flashback competitive events."
-          />
-        )}
+            {page === "tournaments" && (
+              <PlaceholderPage
+                title="Tournaments"
+                description="Project Flashback competitive events."
+              />
+            )}
 
-        {page === "leaderboards" && (
-          <PlaceholderPage
-            title="Leaderboards"
-            description="Player statistics and rankings."
-          />
-        )}
-
-        {page === "settings" && (
-          <PlaceholderPage
-            title="Settings"
-            description="Launcher and account configuration."
-          />
-        )}
-      </section>
+            {page === "settings" && (
+              <PlaceholderPage
+                title="Settings"
+                description="Launcher and account configuration."
+              />
+            )}
+          </section>
+        </>
+      )}
     </AppFrame>
   );
 }

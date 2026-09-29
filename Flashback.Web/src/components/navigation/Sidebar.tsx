@@ -1,5 +1,5 @@
-import type { Page } from "../../types/navigation";
 import type { Account } from "../../types/account";
+import type { Page } from "../../types/navigation";
 
 type Props = {
   page: Page;
@@ -10,11 +10,13 @@ type Props = {
   onLogout: () => void;
 };
 
-const items: {
+type NavItem = {
   page: Page;
   label: string;
   icon: string;
-}[] = [
+};
+
+const navigation: NavItem[] = [
   {
     page: "home",
     label: "Home",
@@ -22,8 +24,8 @@ const items: {
   },
   {
     page: "library",
-    label: "Library",
-    icon: "▣",
+    label: "Play",
+    icon: "▶",
   },
   {
     page: "news",
@@ -31,24 +33,9 @@ const items: {
     icon: "▤",
   },
   {
-    page: "locker",
-    label: "Locker",
-    icon: "◇",
-  },
-  {
-    page: "item-shop",
-    label: "Item Shop",
-    icon: "◈",
-  },
-  {
     page: "tournaments",
     label: "Tournaments",
     icon: "♜",
-  },
-  {
-    page: "leaderboards",
-    label: "Leaderboards",
-    icon: "↗",
   },
   {
     page: "settings",
@@ -65,114 +52,125 @@ export default function Sidebar({
   onLogin,
   onLogout,
 }: Props) {
+  const displayName =
+    account?.profile?.displayName ??
+    account?.discordUsername ??
+    account?.username ??
+    "Guest";
+
+  const level =
+    account?.profile?.level ?? 1;
+
   return (
     <aside className="sidebar">
-      <div className="brand">
-        <div className="brand-mark">
+      <div className="sidebar-brand">
+        <div className="sidebar-logo">
           PF
         </div>
 
         <div>
-          <div className="brand-top">
+          <span className="sidebar-brand-top">
             PROJECT
-          </div>
+          </span>
 
-          <div className="brand-bottom">
+          <strong className="sidebar-brand-bottom">
             FLASHBACK
-          </div>
+          </strong>
         </div>
       </div>
 
-      <div className="sidebar-label">
-        NAVIGATION
+      <div className="sidebar-section-label">
+        LAUNCHER
       </div>
 
-      <nav className="nav-list">
-        {items.map((item) => (
-          <button
-            key={item.page}
-            className={
-              page === item.page
-                ? "nav-item active"
-                : "nav-item"
-            }
-            onClick={() =>
-              onNavigate(item.page)
-            }
-          >
-            <span className="nav-icon">
-              {item.icon}
-            </span>
+      <nav className="sidebar-nav">
+        {navigation.map((item) => {
+          const active =
+            page === item.page;
 
-            <span>
-              {item.label}
-            </span>
-          </button>
-        ))}
+          return (
+            <button
+              type="button"
+              key={item.page}
+              className={
+                active
+                  ? "sidebar-nav-item active"
+                  : "sidebar-nav-item"
+              }
+              onClick={() =>
+                onNavigate(item.page)
+              }
+            >
+              <span className="sidebar-nav-icon">
+                {item.icon}
+              </span>
+
+              <span className="sidebar-nav-label">
+                {item.label}
+              </span>
+
+              {active && (
+                <span className="sidebar-active-bar" />
+              )}
+            </button>
+          );
+        })}
       </nav>
 
       <div className="sidebar-spacer" />
 
-      <div className="sidebar-account">
-        {account ? (
-          <>
-            <div className="account-card">
-              <div className="account-avatar">
-                {(
-                  account.profile
-                    ?.displayName ??
-                  account.discordUsername ??
-                  account.username ??
-                  "P"
-                )
-                  .slice(0, 1)
-                  .toUpperCase()}
-              </div>
-
-              <div className="account-details">
-                <strong>
-                  {account.profile
-                    ?.displayName ??
-                    account.discordUsername ??
-                    account.username}
-                </strong>
-
-                <span>
-                  Level{" "}
-                  {account.profile
-                    ?.level ?? 1}
-                </span>
-              </div>
-            </div>
-
-            <button
-              className="account-action"
-              onClick={onLogout}
-            >
-              LOG OUT
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              className="discord-login"
-              onClick={onLogin}
-            >
-              LOGIN WITH DISCORD
-            </button>
-
-            {loginStatus && (
-              <div className="login-status-small">
-                {loginStatus}
-              </div>
+      <div className="sidebar-account-panel">
+        <div className="sidebar-account-card">
+          <div className="sidebar-avatar">
+            {account?.discordAvatarUrl ? (
+              <img
+                src={account.discordAvatarUrl}
+                alt=""
+              />
+            ) : (
+              displayName
+                .slice(0, 1)
+                .toUpperCase()
             )}
-          </>
-        )}
+          </div>
+
+          <div className="sidebar-account-copy">
+            <strong>
+              {displayName}
+            </strong>
+
+            <span>
+              LEVEL {level}
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="sidebar-account-button"
+          onClick={account ? onLogout : onLogin}
+        >
+          {account
+            ? "LOG OUT"
+            : "LOGIN WITH DISCORD"}
+        </button>
+
+        {!account &&
+          loginStatus && (
+            <div className="sidebar-login-status">
+              {loginStatus}
+            </div>
+          )}
       </div>
 
       <div className="sidebar-footer">
-        PROJECT FLASHBACK
-        <span>v0.1.0</span>
+        <span>
+          PROJECT FLASHBACK
+        </span>
+
+        <span>
+          v0.1.0
+        </span>
       </div>
     </aside>
   );
