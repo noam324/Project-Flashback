@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -263,7 +263,7 @@ public partial class MainWindow : Window
             }
 
             if (root.TryGetProperty(
-                    "authorizeUrl",
+                    "authorizationUrl",
                     out var authorizeElement))
             {
                 authorizeUrl =
@@ -746,7 +746,7 @@ public partial class MainWindow : Window
                 "BUILD READY";
 
             DownloadDetailsText.Text =
-                $"Build {BuildVersion} • CL {BuildCL}";
+                $"Build {BuildVersion} � CL {BuildCL}";
 
             DownloadEtaText.Text =
                 "Installation completed.";
@@ -836,7 +836,7 @@ public partial class MainWindow : Window
                             1);
 
                     DownloadEtaText.Text =
-                        $"{FormatBytes((long)speed)}/s • ETA {FormatTime(TimeSpan.FromSeconds(seconds))}";
+                        $"{FormatBytes((long)speed)}/s � ETA {FormatTime(TimeSpan.FromSeconds(seconds))}";
                 }
             }
             else
@@ -988,7 +988,7 @@ public partial class MainWindow : Window
                 "BUILD INSTALLED";
 
             DownloadDetailsText.Text =
-                $"Build {BuildVersion} • CL {BuildCL}";
+                $"Build {BuildVersion} � CL {BuildCL}";
 
             DownloadEtaText.Text =
                 executable;
@@ -1006,7 +1006,7 @@ public partial class MainWindow : Window
             "BUILD NOT INSTALLED";
 
         DownloadDetailsText.Text =
-            $"Build {BuildVersion} • CL {BuildCL}";
+            $"Build {BuildVersion} � CL {BuildCL}";
 
         DownloadEtaText.Text =
             "Download the build to continue.";
