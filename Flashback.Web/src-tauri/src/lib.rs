@@ -27,7 +27,12 @@ fn build_root() -> Option<PathBuf> {
 }
 
 fn executable_from_root(root: &Path) -> PathBuf {
-    root.join(GAME_EXE.replace('/', std::path::MAIN_SEPARATOR_STR))
+    root.join(
+        GAME_EXE.replace(
+            '/',
+            std::path::MAIN_SEPARATOR_STR,
+        ),
+    )
 }
 
 #[tauri::command]
@@ -42,16 +47,26 @@ fn detect_local_build() -> BuildInfo {
         };
     };
 
-    let executable = executable_from_root(&root);
-    let installed = executable.is_file();
+    let executable =
+        executable_from_root(&root);
+
+    let installed =
+        executable.is_file();
 
     BuildInfo {
         installed,
         build: BUILD_VERSION.to_string(),
         changelist: BUILD_CL.to_string(),
-        root_path: Some(root.to_string_lossy().to_string()),
+        root_path: Some(
+            root.to_string_lossy()
+                .to_string(),
+        ),
         executable_path: if installed {
-            Some(executable.to_string_lossy().to_string())
+            Some(
+                executable
+                    .to_string_lossy()
+                    .to_string(),
+            )
         } else {
             None
         },
@@ -59,14 +74,20 @@ fn detect_local_build() -> BuildInfo {
 }
 
 #[tauri::command]
-fn validate_build_directory(path: String) -> Result<BuildInfo, String> {
+fn validate_build_directory(
+    path: String,
+) -> Result<BuildInfo, String> {
     let root = PathBuf::from(path);
 
     if !root.is_dir() {
-        return Err("Selected path is not a directory.".to_string());
+        return Err(
+            "Selected path is not a directory."
+                .to_string(),
+        );
     }
 
-    let executable = executable_from_root(&root);
+    let executable =
+        executable_from_root(&root);
 
     if !executable.is_file() {
         return Err(
@@ -79,22 +100,41 @@ fn validate_build_directory(path: String) -> Result<BuildInfo, String> {
         installed: true,
         build: BUILD_VERSION.to_string(),
         changelist: BUILD_CL.to_string(),
-        root_path: Some(root.to_string_lossy().to_string()),
-        executable_path: Some(executable.to_string_lossy().to_string()),
+        root_path: Some(
+            root.to_string_lossy()
+                .to_string(),
+        ),
+        executable_path: Some(
+            executable
+                .to_string_lossy()
+                .to_string(),
+        ),
     })
 }
 
 #[tauri::command]
 fn launch_local_build() -> Result<u32, String> {
-    let info = detect_local_build();
+    let info =
+        detect_local_build();
 
-    let Some(executable) = info.executable_path else {
-        return Err("Local build was not found.".to_string());
+    let Some(executable) =
+        info.executable_path
+    else {
+        return Err(
+            "Local build was not found."
+                .to_string(),
+        );
     };
 
-    let child = Command::new(&executable)
-        .spawn()
-        .map_err(|error| format!("Failed to start game: {}", error))?;
+    let child =
+        Command::new(&executable)
+            .spawn()
+            .map_err(|error| {
+                format!(
+                    "Failed to start game: {}",
+                    error
+                )
+            })?;
 
     Ok(child.id())
 }
@@ -102,11 +142,20 @@ fn launch_local_build() -> Result<u32, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![
-            detect_local_build,
-            validate_build_directory,
-            launch_local_build
-        ])
-        .run(tauri::generate_context!())
-        .expect("error while running Project Flashback");
+        .plugin(
+            tauri_plugin_dialog::init(),
+        )
+        .invoke_handler(
+            tauri::generate_handler![
+                detect_local_build,
+                validate_build_directory,
+                launch_local_build
+            ],
+        )
+        .run(
+            tauri::generate_context!(),
+        )
+        .expect(
+            "error while running Project Flashback",
+        );
 }

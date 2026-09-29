@@ -1,16 +1,25 @@
 import { useEffect, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
 
 import { getGameStatus } from "../../lib/api";
 import { useLauncherStore } from "../../store/launcherStore";
-
 import type { BuildStatus } from "../../types/build";
 
 const DOWNLOAD_URL =
   "http://localhost:8080/Fortnite-12.50-CL-13137020.rar";
 
-function formatPath(
-  path: string | null
-): string {
+async function detectNativeBuild(): Promise<BuildStatus | null> {
+  try {
+    return await invoke<BuildStatus>(
+      "detect_local_build"
+    );
+  } catch {
+    return null;
+  }
+}
+
+function formatPath(path: string | null) {
   if (!path) {
     return "";
   }
@@ -22,9 +31,7 @@ function formatPath(
 
 export default function LibraryPage() {
   const [build, setBuild] =
-    useState<BuildStatus | null>(
-      null
-    );
+    useState<BuildStatus | null>(null);
 
   const [scanning, setScanning] =
     useState(false);
@@ -39,16 +46,19 @@ export default function LibraryPage() {
 
   const setSelectedBuild =
     useLauncherStore(
-      (state) =>
-        state.setSelectedBuild
+      (state) => state.setSelectedBuild
     );
 
   async function scanBuild() {
+    setScanning(true);
+    setError("");
+
     try {
-      setScanning(true);
-      setError("");
+      const native =
+        await detectNativeBuild();
 
       const result =
+        native ??
         await getGameStatus();
 
       setBuild(result);
@@ -59,8 +69,7 @@ export default function LibraryPage() {
       ) {
         setSelectedBuild({
           build: result.build,
-          changelist:
-            result.changelist,
+          changelist: result.changelist,
           executablePath:
             result.executablePath,
         });
@@ -76,6 +85,50 @@ export default function LibraryPage() {
     }
   }
 
+  async function chooseLocation() {
+    try {
+      const selected =
+        await open({
+          directory: true,
+          multiple: false,
+          title:
+            "Select your Project Flashback build folder",
+        });
+
+      if (
+        typeof selected !== "string"
+      ) {
+        return;
+      }
+
+      const result =
+        await invoke<BuildStatus>(
+          "validate_build_directory",
+          {
+            path: selected,
+          }
+        );
+
+      setBuild(result);
+
+      setSelectedBuild({
+        build: result.build,
+        changelist:
+          result.changelist,
+        executablePath:
+          result.executablePath,
+      });
+
+      setError("");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "The selected folder is not a valid build."
+      );
+    }
+  }
+
   useEffect(() => {
     void scanBuild();
   }, []);
@@ -86,30 +139,51 @@ export default function LibraryPage() {
   return (
     <main className="route-page">
 
-      <div className="route-header">
-        <div>
-          <div className="eyebrow">
-            GAME LIBRARY
-          </div>
+      <div className="library-hero">
 
-          <h1>
-            Library
-          </h1>
+        <div>
+
+          <span className="section-kicker">
+            GAME LIBRARY
+          </span>
+
+          <h2>
+            Classic Builds
+          </h2>
 
           <p>
-            Installed builds and available downloads.
+            Choose the build Project Flashback
+            should launch. Scan your PC or select
+            an existing authorized local build.
           </p>
+
         </div>
 
-        <button
-          className="button ghost"
-          onClick={scanBuild}
-          disabled={scanning}
-        >
-          {scanning
-            ? "SCANNING..."
-            : "SCAN PC"}
-        </button>
+        <div className="build-hero-actions">
+
+          <button
+            className="button secondary"
+            onClick={() =>
+              void chooseLocation()
+            }
+          >
+            CHANGE LOCATION
+          </button>
+
+          <button
+            className="button ghost"
+            onClick={() =>
+              void scanBuild()
+            }
+            disabled={scanning}
+          >
+            {scanning
+              ? "SCANNING..."
+              : "SCAN PC"}
+          </button>
+
+        </div>
+
       </div>
 
       {error && (
@@ -118,249 +192,276 @@ export default function LibraryPage() {
         </div>
       )}
 
-      <section className="library-grid">
+      <section className="build-grid">
 
         {/* LOCAL BUILD */}
 
         <article
           className={
             installed
-              ? "library-card active-card"
-              : "library-card"
+              ? "build-card-main ready"
+              : "build-card-main"
           }
         >
-          <div className="library-card-header">
-            <div>
-              <div className="eyebrow">
-                LOCAL BUILD
-              </div>
 
-              <h2>
-                Classic Build
-              </h2>
-            </div>
+          <div className="build-art-panel">
 
-            <span
-              className={
-                installed
-                  ? "build-badge found"
-                  : "build-badge"
-              }
-            >
-              {installed
-                ? "FOUND"
-                : "NOT FOUND"}
+            <span className="build-art-label">
+              CLASSIC ERA
             </span>
-          </div>
 
-          <div className="library-version">
-            {build?.build ?? "12.50"}
-          </div>
+            <strong>
+              12.50
+            </strong>
 
-          <div className="library-subversion">
-            CL{" "}
-            {build?.changelist ??
-              "13137020"}
-          </div>
+            <small>
+              CHAPTER 2 / SEASON 2
+            </small>
 
-          <div className="build-details">
-
-            <div>
-              <span>
-                VERSION
-              </span>
-
-              <strong>
-                {build?.build ?? "12.50"}
-              </strong>
-            </div>
-
-            <div>
-              <span>
-                CHANGELIST
-              </span>
-
-              <strong>
-                {build?.changelist ??
-                  "13137020"}
-              </strong>
-            </div>
-
-            <div>
-              <span>
-                STATUS
-              </span>
-
-              <strong>
-                {installed
-                  ? "READY"
-                  : "MISSING"}
-              </strong>
+            <div className="art-lines">
+              <span />
+              <span />
+              <span />
             </div>
 
           </div>
 
-          {installed &&
-            build?.executablePath && (
-              <div className="path-panel">
-                <span>
-                  LOCAL EXECUTABLE
+          <div className="build-card-content">
+
+            <div className="build-card-head">
+
+              <div>
+
+                <span className="section-kicker">
+                  LOCAL INSTALLATION
                 </span>
 
-                <code>
-                  {formatPath(
-                    build.executablePath
-                  )}
-                </code>
+                <h3>
+                  Fortnite 12.50
+                </h3>
+
               </div>
-            )}
 
-          <div className="library-actions">
-
-            <button
-              className="button primary full"
-              disabled={!installed}
-              onClick={() => {
-                if (
-                  !build?.executablePath
-                ) {
-                  return;
+              <span
+                className={
+                  installed
+                    ? "status-pill ready"
+                    : "status-pill"
                 }
+              >
+                {installed
+                  ? "READY"
+                  : "NOT FOUND"}
+              </span>
 
-                setSelectedBuild({
-                  build:
-                    build.build,
-                  changelist:
-                    build.changelist,
-                  executablePath:
-                    build.executablePath,
-                });
-              }}
-            >
-              {selectedBuild
-                ? "LOCAL BUILD SELECTED"
-                : "USE LOCAL BUILD"}
-            </button>
-
-            <button
-              className="button ghost full"
-              onClick={scanBuild}
-              disabled={scanning}
-            >
-              {scanning
-                ? "SCANNING..."
-                : "RESCAN"}
-            </button>
-
-          </div>
-        </article>
-
-
-        {/* DOWNLOAD BUILD */}
-
-        <article className="library-card">
-
-          <div className="library-card-header">
-            <div>
-              <div className="eyebrow">
-                AVAILABLE
-              </div>
-
-              <h2>
-                Game Build
-              </h2>
             </div>
 
-            <span className="build-badge">
+            <div className="build-identifiers">
+
+              <div>
+                <span>
+                  VERSION
+                </span>
+
+                <strong>
+                  {build?.build ??
+                    "12.50"}
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  CHANGELIST
+                </span>
+
+                <strong>
+                  {build?.changelist ??
+                    "13137020"}
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  STATUS
+                </span>
+
+                <strong>
+                  {installed
+                    ? "READY"
+                    : "MISSING"}
+                </strong>
+              </div>
+
+            </div>
+
+            {installed &&
+              build?.executablePath && (
+                <div className="path-box">
+
+                  <span>
+                    LOCAL EXECUTABLE
+                  </span>
+
+                  <code>
+                    {formatPath(
+                      build.executablePath
+                    )}
+                  </code>
+
+                </div>
+              )}
+
+            <div className="build-actions">
+
+              <button
+                className="button primary"
+                disabled={!installed}
+                onClick={() => {
+
+                  if (
+                    !build?.executablePath
+                  ) {
+                    return;
+                  }
+
+                  setSelectedBuild({
+                    build:
+                      build.build,
+                    changelist:
+                      build.changelist,
+                    executablePath:
+                      build.executablePath,
+                  });
+
+                }}
+              >
+                {selectedBuild
+                  ? "BUILD SELECTED"
+                  : "USE THIS BUILD"}
+              </button>
+
+              <button
+                className="button ghost"
+                onClick={() =>
+                  void chooseLocation()
+                }
+              >
+                CHANGE LOCATION
+              </button>
+
+            </div>
+
+          </div>
+
+        </article>
+
+        {/* DOWNLOAD */}
+
+        <article className="build-card-download">
+
+          <div className="download-top">
+
+            <span className="section-kicker">
+              AVAILABLE
+            </span>
+
+            <span className="download-version">
               12.50
             </span>
+
           </div>
 
-          <div className="library-version">
-            12.50
+          <div className="download-icon">
+            ↓
           </div>
 
-          <div className="library-subversion">
-            CL 13137020
-          </div>
+          <h3>
+            Install Classic Build
+          </h3>
 
-          <p className="library-description">
-            Download the classic build when
-            it is not already installed.
+          <p>
+            Download the build archive for
+            your own local installation, then
+            select the extracted build folder.
           </p>
 
-          <div className="build-details">
+          <div className="download-specs">
 
-            <div>
-              <span>
+            <span>
+              <small>
                 VERSION
-              </span>
+              </small>
 
               <strong>
                 12.50
               </strong>
-            </div>
+            </span>
 
-            <div>
-              <span>
+            <span>
+              <small>
                 CHANGELIST
-              </span>
+              </small>
 
               <strong>
                 13137020
               </strong>
-            </div>
+            </span>
 
-            <div>
-              <span>
-                ARCHIVE
-              </span>
+            <span>
+              <small>
+                FORMAT
+              </small>
 
               <strong>
                 RAR
               </strong>
-            </div>
+            </span>
 
           </div>
 
           <a
-            className="button primary full download-link"
+            className="button primary full"
             href={DOWNLOAD_URL}
           >
             DOWNLOAD BUILD
+            <span>→</span>
           </a>
 
         </article>
+
       </section>
 
+      {/* SELECTED */}
 
-      {/* SELECTED BUILD */}
-
-      <section className="selected-build-bar">
+      <section className="selected-bar">
 
         <div>
-          <div className="eyebrow">
-            SELECTED BUILD
-          </div>
+
+          <span className="section-kicker">
+            SELECTED TARGET
+          </span>
 
           <strong>
             {selectedBuild
-              ? `${selectedBuild.build} • CL ${selectedBuild.changelist}`
+              ? selectedBuild.build +
+                "  •  CL " +
+                selectedBuild.changelist
               : "No build selected"}
           </strong>
+
         </div>
 
-        <div
+        <span
           className={
             selectedBuild
-              ? "selected-build-status ready"
-              : "selected-build-status"
+              ? "status-pill ready"
+              : "status-pill"
           }
         >
           {selectedBuild
             ? "READY"
             : "NONE"}
-        </div>
+        </span>
 
       </section>
 
