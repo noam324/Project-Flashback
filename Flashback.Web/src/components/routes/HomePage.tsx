@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+
 import type { Account } from "../../types/account";
 import type { Page } from "../../types/navigation";
 
@@ -6,77 +9,296 @@ type Props = {
   onNavigate: (page: Page) => void;
 };
 
+type BuildInfo = {
+  installed: boolean;
+  build: string;
+  changelist: string;
+  executablePath: string | null;
+};
+
+async function detectBuild(): Promise<BuildInfo | null> {
+  try {
+    return await invoke<BuildInfo>("detect_local_build");
+  } catch {
+    return null;
+  }
+}
+
+async function launchBuild(): Promise<boolean> {
+  try {
+    await invoke<number>("launch_local_build");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export default function HomePage({
   account,
   onNavigate,
 }: Props) {
+  const [build, setBuild] =
+    useState<BuildInfo | null>(null);
+
+  const [launching, setLaunching] =
+    useState(false);
+
   const level =
     account?.profile?.level ?? 1;
 
   const credits =
     account?.profile?.flashbackCredits ?? 0;
 
+  const displayName =
+    account?.profile?.displayName ??
+    account?.discordUsername ??
+    account?.username ??
+    "Guest";
+
+  useEffect(() => {
+    let mounted = true;
+
+    void detectBuild().then((result) => {
+      if (mounted) {
+        setBuild(result);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  async function handlePlay() {
+    if (!build?.installed) {
+      onNavigate("library");
+      return;
+    }
+
+    setLaunching(true);
+
+    const started =
+      await launchBuild();
+
+    setLaunching(false);
+
+    if (!started) {
+      onNavigate("library");
+    }
+  }
+
   return (
-    <main className="route-page">
-      <section className="home-layout">
-        <div className="home-main">
+    <main className="home-page">
 
-          <div className="hero-card">
-            <div className="hero-overlay" />
+      {/* HERO */}
 
-            <div className="hero-content">
-              <div className="eyebrow">
-                PROJECT FLASHBACK
-              </div>
+      <section className="home-hero">
 
-              <h1>
-                CLASSIC
-                <br />
-                BATTLE ROYALE
-              </h1>
+        <div className="hero-grid" />
 
-              <p>
-                Your classic Fortnite-era
-                experience through Project
-                Flashback.
-              </p>
+        <div className="hero-orb hero-orb-one" />
+        <div className="hero-orb hero-orb-two" />
 
-              <div className="hero-actions">
-                <button
-                  className="button primary large"
-                  onClick={() =>
-                    onNavigate("library")
-                  }
-                >
-                  OPEN LIBRARY
-                </button>
+        <div className="hero-copy">
 
-                <button
-                  className="button ghost large"
-                  onClick={() =>
-                    onNavigate("news")
-                  }
-                >
-                  VIEW NEWS
-                </button>
-              </div>
+          <span className="hero-kicker">
+            PROJECT FLASHBACK / CLASSIC ERA
+          </span>
 
-              <div className="hero-status">
-                <span className="status-dot" />
+          <h2>
+            DROP BACK IN.
+            <br />
+            <span>PLAY CLASSIC.</span>
+          </h2>
 
-                <span>
-                  GAME STATUS
-                </span>
+          <p>
+            A dedicated desktop launcher for
+            your classic library, account,
+            progression and game builds.
+          </p>
 
-                <strong>
-                  ONLINE
-                </strong>
-              </div>
+          <div className="hero-actions">
+
+            <button
+              className="button primary hero-play"
+              onClick={() =>
+                void handlePlay()
+              }
+              disabled={launching}
+            >
+              <span>
+                {launching
+                  ? "LAUNCHING..."
+                  : build?.installed
+                    ? "PLAY NOW"
+                    : "OPEN LIBRARY"}
+              </span>
+
+              <span className="button-arrow">
+                →
+              </span>
+            </button>
+
+            <button
+              className="button secondary"
+              onClick={() =>
+                onNavigate("library")
+              }
+            >
+              LIBRARY
+            </button>
+
+          </div>
+
+          <div className="hero-meta">
+
+            <span className="meta-status">
+
+              <span className="status-dot" />
+
+              {build?.installed
+                ? "BUILD READY"
+                : "BUILD NOT INSTALLED"}
+
+            </span>
+
+            <span>
+              12.50
+            </span>
+
+            <span>
+              CL 13137020
+            </span>
+
+          </div>
+
+        </div>
+
+        {/* HERO ART */}
+
+        <div
+          className="hero-build-art"
+          aria-hidden="true"
+        >
+
+          <div className="hero-slice slice-one" />
+
+          <div className="hero-slice slice-two" />
+
+          <div className="hero-slice slice-three" />
+
+          <div className="hero-badge-large">
+            12.50
+          </div>
+
+          <div className="hero-badge-small">
+            CHAPTER 2 · SEASON 2
+          </div>
+
+        </div>
+
+      </section>
+
+      {/* DASHBOARD */}
+
+      <section className="dashboard-grid">
+
+        <div className="dashboard-main">
+
+          <div className="section-head">
+
+            <div>
+
+              <span className="section-kicker">
+                WELCOME BACK
+              </span>
+
+              <h3>
+                {displayName}
+              </h3>
+
             </div>
 
-            <div className="hero-build">
-              <span>
+            <button
+              className="text-button"
+              onClick={() =>
+                onNavigate("settings")
+              }
+            >
+              ACCOUNT →
+            </button>
+
+          </div>
+
+          {/* STATS */}
+
+          <div className="profile-stats">
+
+            <StatCard
+              label="LEVEL"
+              value={String(level)}
+              hint="CURRENT LEVEL"
+              icon="01"
+            />
+
+            <StatCard
+              label="CREDITS"
+              value={credits.toLocaleString()}
+              hint="FLASHBACK CREDITS"
+              icon="V"
+            />
+
+            <StatCard
+              label="WINS"
+              value="0"
+              hint="SEASON WINS"
+              icon="★"
+            />
+
+            <StatCard
+              label="KILLS"
+              value="0"
+              hint="TOTAL ELIMS"
+              icon="✦"
+            />
+
+          </div>
+
+          {/* BUILD CARD */}
+
+          <article className="feature-card">
+
+            <div className="feature-copy">
+
+              <span className="section-kicker">
                 CURRENT BUILD
+              </span>
+
+              <h3>
+                Fortnite 12.50
+              </h3>
+
+              <p>
+                Your current classic target is
+                changelist 13137020. Manage the
+                installation from Library.
+              </p>
+
+              <button
+                className="button compact"
+                onClick={() =>
+                  onNavigate("library")
+                }
+              >
+                MANAGE BUILD
+              </button>
+
+            </div>
+
+            <div className="feature-build">
+
+              <span>
+                BUILD
               </span>
 
               <strong>
@@ -86,42 +308,35 @@ export default function HomePage({
               <small>
                 CL 13137020
               </small>
+
+              <small>
+                {build?.installed
+                  ? "READY TO LAUNCH"
+                  : "AVAILABLE TO INSTALL"}
+              </small>
+
             </div>
-          </div>
 
-          <div className="home-stats">
-            <Stat
-              label="V-BUCKS"
-              value={String(credits)}
-            />
+          </article>
 
-            <Stat
-              label="LEVEL"
-              value={String(level)}
-            />
-
-            <Stat
-              label="WINS"
-              value="0"
-            />
-
-            <Stat
-              label="KILLS"
-              value="0"
-            />
-          </div>
         </div>
 
-        <aside className="home-news">
-          <div className="section-heading">
-            <div>
-              <div className="eyebrow">
-                LATEST
-              </div>
+        {/* NEWS */}
 
-              <h2>
+        <aside className="dashboard-side">
+
+          <div className="section-head">
+
+            <div>
+
+              <span className="section-kicker">
+                LATEST
+              </span>
+
+              <h3>
                 News
-              </h2>
+              </h3>
+
             </div>
 
             <button
@@ -130,81 +345,107 @@ export default function HomePage({
                 onNavigate("news")
               }
             >
-              VIEW ALL
+              ALL →
             </button>
+
           </div>
 
-          <NewsCard
-            title="Project Flashback"
-            description="The launcher is being rebuilt into a complete desktop experience."
-            date="LATEST"
+          <NewsRow
+            badge="01"
+            title="Launcher rebuild"
+            text="Project Flashback is becoming a complete desktop launcher."
           />
 
-          <NewsCard
-            title="Classic Build"
-            description="Fortnite 12.50 • CL 13137020 is available in the library."
-            date="BUILD"
+          <NewsRow
+            badge="12.50"
+            title="Classic build"
+            text="The 12.50 build is now the primary launcher target."
           />
 
-          <NewsCard
-            title="Discord Accounts"
-            description="Your account and progression are connected to your Discord login."
-            date="ACCOUNT"
+          <NewsRow
+            badge="DC"
+            title="Discord accounts"
+            text="Sign in to keep your account and progression synced."
           />
+
         </aside>
+
       </section>
+
     </main>
   );
 }
 
-function Stat({
+function StatCard({
   label,
   value,
+  hint,
+  icon,
 }: {
   label: string;
   value: string;
+  hint: string;
+  icon: string;
 }) {
   return (
-    <div className="stat-box">
-      <span>
-        {label}
-      </span>
+    <article className="stat-card">
+
+      <div className="stat-card-top">
+
+        <span>
+          {label}
+        </span>
+
+        <span className="stat-card-icon">
+          {icon}
+        </span>
+
+      </div>
 
       <strong>
         {value}
       </strong>
-    </div>
+
+      <small>
+        {hint}
+      </small>
+
+    </article>
   );
 }
 
-function NewsCard({
+function NewsRow({
+  badge,
   title,
-  description,
-  date,
+  text,
 }: {
+  badge: string;
   title: string;
-  description: string;
-  date: string;
+  text: string;
 }) {
   return (
-    <article className="news-mini-card">
-      <div className="news-mini-icon">
-        PF
+    <article className="news-row">
+
+      <div className="news-badge">
+        {badge}
       </div>
 
       <div>
-        <div className="news-mini-date">
-          {date}
-        </div>
 
-        <h3>
+        <span>
+          FLASHBACK
+        </span>
+
+        <h4>
           {title}
-        </h3>
+        </h4>
 
         <p>
-          {description}
+          {text}
         </p>
+
       </div>
+
     </article>
   );
 }
