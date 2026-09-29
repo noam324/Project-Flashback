@@ -12,13 +12,11 @@ function isTauriRuntime(): boolean {
         __TAURI_INTERNALS__?: unknown;
       }
     ).__TAURI_INTERNALS__
-  );
+  ) || window.location.hostname === "tauri.localhost";
 }
 
 function getApiBaseUrl(): string {
-  return isTauriRuntime()
-    ? "http://localhost:5056"
-    : "";
+  return isTauriRuntime() ? "https://julia-copying-opening-hammer.trycloudflare.com" : "";
 }
 
 type DiscordStartResponse = {
@@ -335,3 +333,6 @@ export const useAccountStore =
       },
     })
   );
+
+
+
