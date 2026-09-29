@@ -1,10 +1,10 @@
-# Project Flashback
+﻿# Project Flashback
 
 Project Flashback is a Windows desktop launcher built to provide a clean, modern interface for managing supported game builds, user accounts, profiles, Locker entitlements, and community features.
 
 > **Status:** Active development
 
-## ✨ Features
+## ג¨ Features
 
 * Discord OAuth authentication
 * Server-side account and session management
@@ -17,16 +17,16 @@ Project Flashback is a Windows desktop launcher built to provide a clean, modern
 * Automated Windows builds with GitHub Actions
 * Secure server-side authorization for administrative features
 
-## 🏗️ Project Structure
+## נ—ן¸ Project Structure
 
 Project Flashback is organized into several components:
 
-* **Flashback.Launcher** — Windows launcher functionality.
-* **Flashback.Web** — frontend and Tauri desktop interface.
-* **Flashback.DownloadServer** — download and update infrastructure.
-* **Backend API** — authentication, sessions, profiles, Locker, rewards, and administrative operations.
+* **Flashback.Launcher** ג€” Windows launcher functionality.
+* **Flashback.Web** ג€” frontend and Tauri desktop interface.
+* **Flashback.DownloadServer** ג€” download and update infrastructure.
+* **Backend API** ג€” authentication, sessions, profiles, Locker, rewards, and administrative operations.
 
-## 🔐 Authentication & Security
+## נ” Authentication & Security
 
 Authentication is handled by the Project Flashback backend.
 
@@ -54,7 +54,7 @@ This includes:
 
 Discord OAuth credentials and other sensitive configuration values are stored outside the source code using server-side secret configuration.
 
-## 🎒 Locker System
+## נ’ Locker System
 
 Project Flashback includes a server-side Locker entitlement system.
 
@@ -64,7 +64,7 @@ Administrators can manage authorized users' Locker entitlements through the Admi
 
 The launcher does not have authority to arbitrarily grant itself items. Ownership is determined by the backend.
 
-## 👑 Admin System
+## נ‘‘ Admin System
 
 Administrative functionality is protected by server-side authorization.
 
@@ -78,13 +78,13 @@ Authorized administrators can:
 
 Administrative permissions are validated by the backend and are not based solely on client-side UI state.
 
-## 💰 Rewards
+## נ’° Rewards
 
 Project Flashback supports server-side account rewards and Flashback Credits.
 
 Rewards are intended to be calculated and stored by the backend rather than being trusted to values supplied by the launcher client.
 
-## 🌐 Backend
+## נ Backend
 
 The Project Flashback launcher communicates with a dedicated backend API for authentication and account functionality.
 
@@ -92,7 +92,7 @@ Production and development environments may use different API endpoints.
 
 Sensitive credentials and secrets are never intended to be committed to the public repository.
 
-## 🛠️ Building
+## נ› ן¸ Building
 
 The repository contains the source code and CI configuration required to build Project Flashback.
 
@@ -108,7 +108,7 @@ Additional configuration may be required for local development.
 
 Secrets and environment-specific credentials should be configured locally and must not be committed to the repository.
 
-## ⚙️ Continuous Integration
+## ג™ן¸ Continuous Integration
 
 Project Flashback uses GitHub Actions to automate Windows builds.
 
@@ -121,7 +121,7 @@ The build pipeline is intended to:
 
 Release artifacts should be traceable to the source code and workflow that produced them.
 
-## 📦 Releases
+## נ“¦ Releases
 
 Official releases are published through GitHub Releases.
 
@@ -129,7 +129,7 @@ Each release should correspond to a specific version of the Project Flashback so
 
 Release notes should document important changes, fixes, and known issues.
 
-## 🔏 Code Signing Policy
+## נ” Code Signing Policy
 
 Project Flashback's **Code Signing Policy** is to sign official release binaries when an appropriate trusted code-signing service is available.
 
@@ -143,7 +143,7 @@ Users should obtain official releases from the project's published release chann
 
 The project does not intentionally disable or bypass Windows security features such as Smart App Control.
 
-## 🛡️ Security Reporting
+## נ›¡ן¸ Security Reporting
 
 If you discover a security vulnerability, please avoid publicly posting:
 
@@ -156,7 +156,7 @@ If you discover a security vulnerability, please avoid publicly posting:
 
 Security issues should be reported responsibly so they can be investigated without exposing users or credentials.
 
-## 🔒 Privacy
+## נ”’ Privacy
 
 Project Flashback uses Discord OAuth for authentication.
 
@@ -164,7 +164,7 @@ The launcher communicates with the Project Flashback backend for authentication 
 
 The project does not intentionally commit Discord OAuth client secrets, database credentials, session secrets, private keys, or other sensitive credentials to the public repository.
 
-## 🤝 Contributing
+## נ₪ Contributing
 
 Project Flashback is under active development.
 
@@ -177,16 +177,17 @@ Before submitting a contribution, please ensure that:
 * Changes are relevant to the project.
 * The project continues to build successfully.
 
-## 📄 License
+## נ“„ License
 
 Project Flashback is released under the MIT License.
 
 See [LICENSE](LICENSE) for the full license text.
 
-## ⚠️ Disclaimer
+## ג ן¸ Disclaimer
 
 Project Flashback is an independent community project.
 
 It is not affiliated with, endorsed by, or sponsored by Epic Games.
 
 Fortnite and related trademarks are property of their respective owners.
+
