@@ -1,9 +1,25 @@
-import { create } from "zustand";
+﻿import { create } from "zustand";
 
 import type { Account } from "../types/account";
 
 const TOKEN_KEY =
   "flashback_session";
+
+function isTauriRuntime(): boolean {
+  return Boolean(
+    (
+      window as Window & {
+        __TAURI_INTERNALS__?: unknown;
+      }
+    ).__TAURI_INTERNALS__
+  );
+}
+
+function getApiBaseUrl(): string {
+  return isTauriRuntime()
+    ? "http://localhost:5056"
+    : "";
+}
 
 type DiscordStartResponse = {
   ticket: string;
@@ -75,7 +91,7 @@ async function getAccount(
 ): Promise<Account> {
   const response =
     await fetch(
-      "/api/auth/session/validate",
+      `${getApiBaseUrl()}/api/auth/session/validate`,
       {
         headers: {
           Authorization:
@@ -169,7 +185,7 @@ export const useAccountStore =
 
             const response =
               await fetch(
-                "/api/auth/discord/start"
+                `${getApiBaseUrl()}/api/auth/discord/start`
               );
 
             if (!response.ok) {
@@ -214,7 +230,7 @@ export const useAccountStore =
               try {
                 statusResponse =
                   await fetch(
-                    `/api/auth/discord/status/${encodeURIComponent(
+                    `${getApiBaseUrl()}/api/auth/discord/status/${encodeURIComponent(
                       start.ticket
                     )}`
                   );
@@ -293,7 +309,7 @@ export const useAccountStore =
         try {
           if (token) {
             await fetch(
-              "/api/auth/session/logout",
+              `${getApiBaseUrl()}/api/auth/session/logout`,
               {
                 method: "POST",
 

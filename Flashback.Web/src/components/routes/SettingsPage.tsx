@@ -1,5 +1,11 @@
 ﻿import { useEffect, useState } from "react";
 
+const API_BASE_URL =
+  (window as Window & {
+    __TAURI_INTERNALS__?: unknown;
+  }).__TAURI_INTERNALS__
+    ? "http://localhost:5056"
+    : "";
 type Settings = {
   launchOnStartup: boolean;
   closeToTray: boolean;
@@ -68,7 +74,7 @@ export default function SettingsPage({
 
     let mounted = true;
 
-    void fetch("/api/admin/status", {
+    void fetch(`${API_BASE_URL}/api/admin/status`, {
       headers: {
         Authorization:
           `Bearer ${sessionToken}`,
@@ -475,7 +481,7 @@ function AdminPanel({
     options?: RequestInit
   ) {
     const response =
-      await fetch(path, {
+      await fetch(`${API_BASE_URL}${path}`, {
         ...options,
         headers: {
           ...(options?.headers ?? {}),
@@ -973,3 +979,4 @@ function SettingRow({
     </button>
   );
 }
+
