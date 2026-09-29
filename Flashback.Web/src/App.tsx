@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 
 import AppFrame from "./components/core/AppFrame";
 import Sidebar from "./components/navigation/Sidebar";
@@ -8,6 +8,7 @@ import HomePage from "./components/routes/HomePage";
 import LibraryPage from "./components/routes/LibraryPage";
 import NewsPage from "./components/routes/NewsPage";
 import PlaceholderPage from "./components/routes/PlaceholderPage";
+import SettingsPage from "./components/routes/SettingsPage";
 
 import { useAccountStore } from "./store/accountStore";
 
@@ -62,7 +63,7 @@ function DiscordLoginScreen({
           </span>
 
           <span>
-            →
+            ג†’
           </span>
         </button>
 
@@ -121,6 +122,11 @@ export default function App() {
   const logout =
     useAccountStore(
       (state) => state.logout
+    );
+
+  const sessionToken =
+    useAccountStore(
+      (state) => state.sessionToken
     );
 
   useEffect(() => {
@@ -200,9 +206,8 @@ export default function App() {
             )}
 
             {page === "settings" && (
-              <PlaceholderPage
-                title="Settings"
-                description="Launcher and account configuration."
+              <SettingsPage
+                sessionToken={sessionToken}
               />
             )}
           </section>
@@ -211,3 +216,4 @@ export default function App() {
     </AppFrame>
   );
 }
+

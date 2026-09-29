@@ -3,6 +3,7 @@ using System;
 using Flashback.Migrations.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Flashback.Migrations.Migrations
 {
     [DbContext(typeof(FlashbackDbContext))]
-    partial class FlashbackDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260929143653_AddLockerEntitlements")]
+    partial class AddLockerEntitlements
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.11");
